@@ -1,0 +1,73 @@
+clear;
+close all;
+%% contour plot with constraints
+x=-2:0.05:5;
+y=-2:0.05:5;
+[X Y] = meshgrid(x,y);
+
+q=(X-1).^2+(Y-2.5).^2;
+contour(X,Y,q,logspace(-1,2,100))
+axis([-1 4.5 -1 3])
+colorbar;
+
+yc1=x/2+1;
+yc2=-x/2+3;
+yc3=x/2-1;
+xc4=zeros(size(x));
+yc5=zeros(size(y));
+hold on
+%     plot(x,yc1);
+%     plot(x,yc2);
+%     plot(x,yc3);
+%     plot(xc4,y);
+%     plot(x,yc5);
+    fill([x x(end) x(1)],[yc1 y(end) y(end)],[0.7 0.7 0.7],'facealpha',0.3, 'facecolor', 'black')
+    fill([x x(end) x(1)],[yc2 y(end) y(end)],[0.7 0.7 0.7],'facealpha',0.3, 'facecolor', 'black')
+    fill([x x(end) x(1)],[yc3 y(1) y(1)],[0.7 0.7 0.7],'facealpha',0.3, 'facecolor', 'black')
+    fill([xc4 x(1) x(1)],[y y(end) y(1)],[0.7 0.7 0.7],'facealpha',0.3, 'facecolor', 'black')
+    fill([x x(end) x(1)],[yc5 y(1) y(1)],[0.7 0.7 0.7],'facealpha',0.3, 'facecolor', 'black')
+
+%% Active Set Method
+H = [2 0; 0 2];
+g = [-2 ; -5];
+A = [1 -1 -1 1 0;-2 -2 2 0 1]';
+b = [-2; -6; -2; 0; 0];
+
+%% Find a feasible point using linprog
+[m,n] = size(A);
+xe = [-1; -1];
+ganma = sign(A*xe - b);
+Af = [A diag(ganma); zeros(m,n) eye(m)];
+bf = [b; zeros(m,1)]; 
+f = [zeros(n,1); ones(m,1)];
+z = linprog(f,-Af,-bf);
+xk = z(1:n);
+%[x,lambda,info] = ActiveSetMethod(H,g,A,b,xk);
+
+%plot(info.xs(1,:),info.xs(2,:),'r--','LineWidth',1.5)
+
+%% (16.47) The objective function should be minimized with respect to x AND greek_N
+% if during solving \eta converges to positive number,
+% increase big_M until \eta converges to 0
+big_M = 10^4; 
+
+% Implementation: Setting up Variables
+Hm = [H [0;0]; 0 0 1;];
+gm = [g ; big_M];
+one = ones(5,1);
+Aineq_m = [A one; 0 0 1;];
+bineq_m = [b ; 0];
+
+intial_x = [0;];
+eta = max(0, max(bineq_m));
+
+[x,lambda,info] = ActiveSetMethod(Hm,gm,Aineq_m,bineq_m,[intial_x;eta]);
+
+%% (16.48)
+              
+
+X = quadprog(H,g,-A,-b);
+hold on
+plot(X(1),X(2),'ro', 'MarkerSize', 6)
+
+
